@@ -13,6 +13,23 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdPolls, setCreatedPolls] = useState<{ id: string; title: string }[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDeleteRecord = (idToDelete: string) => {
+    const updatedPolls = createdPolls.filter(p => p.id !== idToDelete);
+    setCreatedPolls(updatedPolls);
+
+    const savedIds = localStorage.getItem("my_created_polls");
+    if (savedIds) {
+      try {
+        const ids: string[] = JSON.parse(savedIds);
+        const updatedIds = ids.filter(id => id !== idToDelete);
+        localStorage.setItem("my_created_polls", JSON.stringify(updatedIds));
+      } catch (e) {
+        console.error("Error updating localStorage after deletion:", e);
+      }
+    }
+  };
 
   // Load recently created polls from history
   useEffect(() => {
@@ -261,22 +278,50 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
             {createdPolls.map((poll) => (
               <div key={poll.id} className="py-3 flex items-center justify-between gap-4 first:pt-0 last:pb-0">
                 <span className="text-xs font-medium text-slate-200 truncate">{poll.title}</span>
-                <div className="flex gap-2">
-                  <a
-                    href={`#/poll/${poll.id}`}
-                    className="px-3 py-1.5 bg-white/5 hover:bg-indigo-500/10 border border-white/10 text-indigo-300 hover:text-indigo-200 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1"
-                  >
-                    <Vote className="w-3.5 h-3.5" />
-                    投票頁面
-                  </a>
-                  <a
-                    href={`#/results/${poll.id}`}
-                    className="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30 text-white rounded-lg text-[11px] font-bold transition-all flex items-center gap-1"
-                  >
-                    <BarChart3 className="w-3.5 h-3.5" />
-                    統計計票
-                  </a>
-                </div>
+                {deletingId === poll.id ? (
+                  <div className="flex gap-1.5 items-center shrink-0">
+                    <span className="text-[10px] text-rose-400 font-bold mr-1">確定刪除此紀錄？</span>
+                    <button
+                      onClick={() => {
+                        handleDeleteRecord(poll.id);
+                        setDeletingId(null);
+                      }}
+                      className="px-2 py-1 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/30 rounded text-[10px] font-extrabold transition-all cursor-pointer"
+                    >
+                      確定
+                    </button>
+                    <button
+                      onClick={() => setDeletingId(null)}
+                      className="px-2 py-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 border border-white/10 rounded text-[10px] font-bold transition-all cursor-pointer"
+                    >
+                      取消
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-1.5 items-center shrink-0">
+                    <a
+                      href={`#/poll/${poll.id}`}
+                      className="px-3 py-1.5 bg-white/5 hover:bg-indigo-500/10 border border-white/10 text-indigo-300 hover:text-indigo-200 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1"
+                    >
+                      <Vote className="w-3.5 h-3.5" />
+                      投票頁面
+                    </a>
+                    <a
+                      href={`#/results/${poll.id}`}
+                      className="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30 text-white rounded-lg text-[11px] font-bold transition-all flex items-center gap-1"
+                    >
+                      <BarChart3 className="w-3.5 h-3.5" />
+                      統計計票
+                    </a>
+                    <button
+                      onClick={() => setDeletingId(poll.id)}
+                      className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 rounded-lg transition-all cursor-pointer"
+                      title="刪除此項紀錄"
+                    >
+                      <Trash className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
