@@ -25,7 +25,8 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
   const getPollUrl = () => {
     // We use hash routing: #/poll/ID
     const base = window.location.origin + window.location.pathname;
-    return `${base}#/poll/${poll.id}`;
+    const cleanBase = base.endsWith("/") ? base : base + "/";
+    return `${cleanBase}#/poll/${poll.id}`;
   };
 
   const pollUrl = getPollUrl();
