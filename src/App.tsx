@@ -44,11 +44,11 @@ export default function App() {
           if (poll) {
             setView({ type: "VOTE", pollId: id, poll });
           } else {
-            setError(`找不到投票項目：${id}`);
+            setError(`Poll not found: ${id}`);
             setView({ type: "CREATE" });
           }
         } catch (err) {
-          setError("讀取投票資料時發生錯誤。");
+          setError("An error occurred while loading poll data.");
           setView({ type: "CREATE" });
         } finally {
           setLoading(false);
@@ -66,11 +66,11 @@ export default function App() {
           if (poll) {
             setView({ type: "RESULTS", pollId: id, poll });
           } else {
-            setError(`找不到投票統計項目：${id}`);
+            setError(`Poll results not found: ${id}`);
             setView({ type: "CREATE" });
           }
         } catch (err) {
-          setError("讀取統計資料時發生錯誤。");
+          setError("An error occurred while loading results.");
           setView({ type: "CREATE" });
         } finally {
           setLoading(false);
@@ -107,9 +107,9 @@ export default function App() {
       }`}>
         <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
         {isFirebaseConfigured ? (
-          <span>🔌 已成功串接您的專屬 Firebase 即時資料庫</span>
+          <span>🔌 Successfully connected to your dedicated Firebase Realtime Database</span>
         ) : (
-          <span>💡 目前處於「瀏覽器沙盒模擬模式」。請點選上方安全指南查看如何連結正式 Firestore。</span>
+          <span>💡 Currently in "Sandbox Mode". Click on the Security Guide to see how to connect to Firestore.</span>
         )}
       </div>
 
@@ -138,7 +138,7 @@ export default function App() {
               }`}
             >
               <PlusCircle className="w-3.5 h-3.5" />
-              <span>發起投票</span>
+              <span>Create Poll</span>
             </button>
 
             <button
@@ -150,7 +150,7 @@ export default function App() {
               }`}
             >
               <HelpCircle className="w-3.5 h-3.5" />
-              <span>安全指南</span>
+              <span>Security Guide</span>
             </button>
           </nav>
         </div>
@@ -170,7 +170,7 @@ export default function App() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
-            <p className="text-sm font-semibold">正在同步雲端資料庫...</p>
+            <p className="text-sm font-semibold">Synchronizing cloud database...</p>
           </div>
         ) : (
           /* Render Active Page view */
@@ -210,7 +210,7 @@ export default function App() {
             <span className="font-bold text-slate-200">SecureVote Engine v1.0</span>
           </div>
           <div className="text-center md:text-right text-slate-400">
-            基於 100% 伺服器端匿名憑證與安全規則，保證 GitHub Pages 靜態網站不被灌票。
+            Based on 100% server-side anonymous authentication and security rules, ensuring anti-fraud voting.
           </div>
         </div>
       </footer>

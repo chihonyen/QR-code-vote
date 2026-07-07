@@ -75,7 +75,7 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
         }
       } catch (err: any) {
         console.error("Initialization error:", err);
-        setError("無法初始化匿名驗證服務。系統已自動套用安全投票 ID。");
+        setError("Unable to initialize anonymous authentication. Secure Poll ID applied.");
       } finally {
         setLoading(false);
       }
@@ -88,14 +88,14 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
     function updateCountdown() {
       const diff = poll.expiresAt - Date.now();
       if (diff <= 0) {
-        setTimeLeftStr("投票已截止");
+        setTimeLeftStr("Closed");
         onViewResults();
         return;
       }
 
       // If the poll has an extremely long duration (effectively indefinite/no set end time)
       if (poll.expiresAt - poll.createdAt > 30 * 24 * 60 * 60 * 1000) {
-        setTimeLeftStr("持續計票中");
+        setTimeLeftStr("Ongoing");
         return;
       }
 
@@ -105,11 +105,11 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
 
       if (hours > 24) {
         const days = Math.floor(hours / 24);
-        setTimeLeftStr(`剩餘 ${days} 天 ${hours % 24} 小時`);
+        setTimeLeftStr(`${days}d ${hours % 24}h left`);
       } else if (hours > 0) {
-        setTimeLeftStr(`剩餘 ${hours} 小時 ${minutes} 分`);
+        setTimeLeftStr(`${hours}h ${minutes}m left`);
       } else {
-        setTimeLeftStr(`剩餘 ${minutes} 分 ${seconds} 秒`);
+        setTimeLeftStr(`${minutes}m ${seconds}s left`);
       }
     }
 
@@ -119,7 +119,7 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
   }, [poll.expiresAt, poll.createdAt]);
 
   const handleClosePoll = async () => {
-    if (!window.confirm("您確定要立刻結束此投票嗎？結束後所有人（包括您自己）都將無法再進行投票。")) {
+    if (!window.confirm("Are you sure you want to end this poll now? Once ended, no one (including yourself) will be able to vote.")) {
       return;
     }
     setIsClosing(true);
@@ -129,7 +129,7 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
       poll.expiresAt = Date.now() - 1000; // react immediately
       onViewResults();
     } catch (err: any) {
-      setError(err.message || "結束投票時發生錯誤。");
+      setError(err.message || "An error occurred while ending the poll.");
     } finally {
       setIsClosing(false);
     }
@@ -146,7 +146,7 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
       setPreviousVoteIdx(selectedIdx);
       onVoteCast();
     } catch (err: any) {
-      setError(err.message || "投票提交失敗，請重試。");
+      setError(err.message || "Failed to submit vote. Please try again.");
     } finally {
       setCasting(false);
     }
@@ -159,7 +159,7 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
-        <p className="text-sm font-semibold text-slate-300">正在載入安全加密通道...</p>
+        <p className="text-sm font-semibold text-slate-300">Loading secure encrypted channel...</p>
       </div>
     );
   }
@@ -178,13 +178,13 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
             ID: {poll.id}
           </span>
           {isExpired ? (
-            <span className="text-[10px] bg-rose-500/20 border border-rose-500/30 text-rose-300 px-2 py-0.5 rounded-md font-bold">已截止</span>
+            <span className="text-[10px] bg-rose-500/20 border border-rose-500/30 text-rose-300 px-2 py-0.5 rounded-md font-bold">Closed</span>
           ) : hasVoted ? (
             <span className="text-[10px] bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
-              <Check className="w-3 h-3" /> 已投票
+              <Check className="w-3 h-3" /> Voted
             </span>
           ) : (
-            <span className="text-[10px] bg-sky-500/20 border border-sky-500/30 text-sky-300 px-2 py-0.5 rounded-md font-bold animate-pulse">投票進行中</span>
+            <span className="text-[10px] bg-sky-500/20 border border-sky-500/30 text-sky-300 px-2 py-0.5 rounded-md font-bold animate-pulse">Voting in Progress</span>
           )}
         </div>
 
@@ -201,16 +201,16 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                <span className="text-xs text-amber-300 font-bold">您是此投票發起人</span>
+                <span className="text-xs text-amber-300 font-bold">You are the poll creator</span>
               </div>
-              <p className="text-[10px] text-slate-400">您可以隨時手動關閉此投票，防止更多人填寫。</p>
+              <p className="text-[10px] text-slate-400">You can close this poll at any time to prevent further voting.</p>
             </div>
             <button
               onClick={handleClosePoll}
               disabled={isClosing}
               className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:scale-100 disabled:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-md shadow-amber-500/10 flex-shrink-0"
             >
-              {isClosing ? "正在關閉..." : "手動結束投票"}
+              {isClosing ? "Closing..." : "Close Poll"}
             </button>
           </div>
         )}
@@ -351,7 +351,7 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
         {/* Security Footnote */}
         <div className="p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/20 flex items-center gap-2.5 text-[10px] text-slate-300">
           <UserCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          <span>我們使用隨機特徵金鑰保護您的匿名隱私。您投出的選項對資料庫完全加密匿名。</span>
+          <span>We use anonymous tokens to protect your privacy. Your choices are fully encrypted and anonymous in the database.</span>
         </div>
       </div>
     </div>

@@ -77,13 +77,13 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
 
   const handleLoadExample = (num: number) => {
     if (num === 1) {
-      setTitle("中午吃什麼？");
-      setDescription("大家一起投票決定今天的午餐吧！");
-      setOptions(["精緻日式拉麵", "古早味排骨便當", "拿坡里窯烤披薩", "健康低卡沙拉盆"]);
+      setTitle("What's for lunch today?");
+      setDescription("Let's vote on today's lunch together!");
+      setOptions(["Japanese Ramen", "Pork Chop Bento", "Napoli Wood-Fired Pizza", "Healthy Low-Cal Salad"]);
     } else if (num === 2) {
-      setTitle("下季度員工聚餐去哪辦？");
-      setDescription("請大家選出最期待的聚餐類型，福委會將根據投票結果進行預約。");
-      setOptions(["頂級和牛燒肉吃到飽", "五星級飯店海鮮百匯", "米其林推薦台菜料理", "美式運動酒吧與手工漢堡"]);
+      setTitle("Next Quarter Employee Dinner");
+      setDescription("Please vote for your preferred dinner option.");
+      setOptions(["Premium Wagyu BBQ Buffet", "5-Star Seafood Buffet", "Michelin-starred Taiwanese Cuisine", "Sports Bar & Burgers"]);
     } else if (num === 3) {
       setTitle("Instant award winner");
       setDescription("Choose the best hero from the options below!");
@@ -97,13 +97,13 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
 
     // Validations
     if (!title.trim()) {
-      setError("請輸入投票題目");
+      setError("Please enter a poll title");
       return;
     }
 
     const filteredOptions = options.map(o => o.trim()).filter(Boolean);
     if (filteredOptions.length < 2) {
-      setError("請至少填寫兩個有效投票選項");
+      setError("Please provide at least two valid options");
       return;
     }
 
@@ -130,7 +130,7 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
 
       onPollCreated(pollId);
     } catch (err: any) {
-      setError(err.message || "建立投票時發生錯誤，請稍後再試。");
+      setError(err.message || "An error occurred while creating the poll, please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -142,9 +142,9 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
       <div className="bg-white/5 backdrop-blur-xl text-white p-6 md:p-8 rounded-2xl shadow-2xl border border-white/10">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="text-center md:text-left">
-            <h2 className="text-xl font-extrabold text-white leading-tight mb-1">🚀 快速投票</h2>
+            <h2 className="text-xl font-extrabold text-white leading-tight mb-1">🚀 Quick Poll</h2>
             <p className="text-xs text-slate-400">
-              免註冊帳號！一鍵在雲端建立 100% 防灌票機制的安全投票。
+              No sign-up required! Instantly create secure, anti-fraud polls in the cloud.
             </p>
           </div>
 
@@ -152,7 +152,7 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
           <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-xl space-y-3">
             <div className="flex items-center gap-2 text-xs font-semibold text-indigo-300">
               <Sparkles className="w-4 h-4 text-indigo-400" />
-              <span>快速帶入示範例子：</span>
+              <span>Load an example:</span>
             </div>
             <div className="flex flex-wrap gap-2">
               <button
@@ -160,14 +160,14 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
                 onClick={() => handleLoadExample(1)}
                 className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-indigo-200 border border-indigo-500/30 rounded-lg text-xs font-semibold transition-all cursor-pointer hover:border-indigo-400"
               >
-                🍔 中午吃什麼？
+                🍔 Lunch Options
               </button>
               <button
                 type="button"
                 onClick={() => handleLoadExample(2)}
                 className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-indigo-200 border border-indigo-500/30 rounded-lg text-xs font-semibold transition-all cursor-pointer hover:border-indigo-400"
               >
-                🎉 員工聚餐去哪辦？
+                🎉 Team Dinner
               </button>
               <button
                 type="button"
@@ -187,10 +187,10 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
 
           {/* Title */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-slate-300">投票主題 <span className="text-rose-400">*</span></label>
+            <label className="block text-xs font-semibold text-slate-300">Poll Topic <span className="text-rose-400">*</span></label>
             <input
               type="text"
-              placeholder="請輸入投票題目..."
+              placeholder="Enter poll title..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all text-sm text-white placeholder-slate-500 font-medium"
@@ -200,9 +200,9 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
 
           {/* Description */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-slate-300">補充說明 (選填)</label>
+            <label className="block text-xs font-semibold text-slate-300">Description (Optional)</label>
             <textarea
-              placeholder="提供投票背景資訊、規則或注意事項..."
+              placeholder="Provide context, rules, or guidelines..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all text-sm min-h-[70px] text-white placeholder-slate-500"
@@ -214,7 +214,7 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="block text-xs font-semibold text-slate-300">
-                投票選項 <span className="text-slate-400">({options.length}/10)</span>
+                Options <span className="text-slate-400">({options.length}/10)</span>
               </label>
               {options.length < 10 && (
                 <button
@@ -223,7 +223,7 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
                   className="flex items-center gap-1 text-xs text-indigo-400 font-semibold hover:text-indigo-300 transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>新增選項</span>
+                  <span>Add Option</span>
                 </button>
               )}
             </div>
@@ -234,7 +234,7 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
                   <span className="text-xs font-mono text-slate-500 w-5 text-center">{idx + 1}</span>
                   <input
                     type="text"
-                    placeholder={`選項 ${idx + 1}`}
+                    placeholder={`Option ${idx + 1}`}
                     value={option}
                     onChange={(e) => handleOptionChange(idx, e.target.value)}
                     className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all text-sm text-white placeholder-slate-500 font-medium"
@@ -266,11 +266,11 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span>正在串接雲端資料庫...</span>
+                <span>Syncing with database...</span>
               </>
             ) : (
               <>
-                <span>建立安全投票並生成 QR Code</span>
+                <span>Create Secure Poll & Generate QR Code</span>
                 <ChevronRight className="w-4 h-4" />
               </>
             )}
@@ -283,7 +283,7 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
         <div className="bg-white/5 border border-white/10 p-6 rounded-2xl space-y-4">
           <h3 className="text-sm font-bold text-slate-300 flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-indigo-400" />
-            <span>您最近建立的投票項目</span>
+            <span>Your Recently Created Polls</span>
           </h3>
           <div className="divide-y divide-white/5">
             {createdPolls.map((poll) => (
@@ -291,7 +291,7 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
                 <span className="text-xs font-medium text-slate-200 truncate">{poll.title}</span>
                 {deletingId === poll.id ? (
                   <div className="flex gap-1.5 items-center shrink-0">
-                    <span className="text-[10px] text-rose-400 font-bold mr-1">確定刪除此紀錄？</span>
+                    <span className="text-[10px] text-rose-400 font-bold mr-1">Delete this record?</span>
                     <button
                       onClick={() => {
                         handleDeleteRecord(poll.id);
@@ -299,13 +299,13 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
                       }}
                       className="px-2 py-1 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/30 rounded text-[10px] font-extrabold transition-all cursor-pointer"
                     >
-                      確定
+                      Confirm
                     </button>
                     <button
                       onClick={() => setDeletingId(null)}
                       className="px-2 py-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 border border-white/10 rounded text-[10px] font-bold transition-all cursor-pointer"
                     >
-                      取消
+                      Cancel
                     </button>
                   </div>
                 ) : (
@@ -315,19 +315,19 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
                       className="px-3 py-1.5 bg-white/5 hover:bg-indigo-500/10 border border-white/10 text-indigo-300 hover:text-indigo-200 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1"
                     >
                       <Vote className="w-3.5 h-3.5" />
-                      投票頁面
+                      Vote Page
                     </a>
                     <a
                       href={`#/results/${poll.id}`}
                       className="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30 text-white rounded-lg text-[11px] font-bold transition-all flex items-center gap-1"
                     >
                       <BarChart3 className="w-3.5 h-3.5" />
-                      統計計票
+                      Results
                     </a>
                     <button
                       onClick={() => setDeletingId(poll.id)}
                       className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 rounded-lg transition-all cursor-pointer"
-                      title="刪除此項紀錄"
+                      title="Delete this record"
                     >
                       <Trash className="w-3.5 h-3.5" />
                     </button>
