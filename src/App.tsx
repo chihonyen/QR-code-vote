@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Shield, PlusCircle, HelpCircle } from "lucide-react";
+import { Shield } from "lucide-react";
 import { getPollFromDB, isFirebaseConfigured } from "./lib/firebase";
 import { Poll } from "./types";
 import PollCreator from "./components/PollCreator";
 import PollVoter from "./components/PollVoter";
 import PollResults from "./components/PollResults";
-import SecurityGuide from "./components/SecurityGuide";
 
 type ViewState = 
   | { type: "CREATE" }
@@ -123,17 +122,6 @@ export default function App() {
 
           {/* Navigation links */}
           <nav className="flex items-center gap-1.5">
-            <button
-              onClick={() => navigateTo("#")}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                view.type === "CREATE"
-                  ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-md"
-                  : "text-slate-300 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Create Poll</span>
-            </button>
           </nav>
         </div>
       </header>
