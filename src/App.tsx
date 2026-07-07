@@ -124,7 +124,7 @@ export default function App() {
             <div className="p-2 bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-500/20">
               <Shield className="w-5 h-5" />
             </div>
-            <span className="font-extrabold text-lg tracking-tight text-white">SecureVote</span>
+            <span className="font-extrabold text-lg tracking-tight text-white">E-Vote</span>
           </button>
 
           {/* Navigation links */}

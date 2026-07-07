@@ -138,7 +138,7 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
       <div className="bg-white/5 backdrop-blur-xl text-white p-6 md:p-8 rounded-2xl shadow-2xl border border-white/10">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="text-center md:text-left">
-            <h2 className="text-xl font-extrabold text-white leading-tight mb-1">🚀 快速發起安全投票</h2>
+            <h2 className="text-xl font-extrabold text-white leading-tight mb-1">🚀 快速投票</h2>
             <p className="text-xs text-slate-400">
               免註冊帳號！一鍵在雲端建立 100% 防灌票機制的安全投票。
             </p>
