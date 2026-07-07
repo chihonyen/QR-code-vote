@@ -229,16 +229,16 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">投票成功送達！</h3>
-              <p className="text-xs text-slate-400 mt-1">您已使用加密設備特徵簽署本次投票，數據已即時鎖定並同步至雲端。</p>
+              <h3 className="text-lg font-bold text-white">Vote Cast Successfully!</h3>
+              <p className="text-xs text-slate-400 mt-1">Your vote has been signed and recorded securely. Data is locked and synced to the cloud.</p>
             </div>
 
             <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-left space-y-2">
-              <div className="text-[10px] text-slate-400 font-mono">您的選擇：</div>
+              <div className="text-[10px] text-slate-400 font-mono">Your Choice:</div>
               <div className="p-3 bg-white/5 rounded-lg border border-white/10 flex justify-between items-center text-sm font-semibold text-white">
                 <span>{poll.options[previousVoteIdx ?? 0]}</span>
                 <span className="text-xs text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded">
-                  {previousVoteIdx !== null ? `第 ${previousVoteIdx + 1} 項` : ""}
+                  {previousVoteIdx !== null ? `Option ${previousVoteIdx + 1}` : ""}
                 </span>
               </div>
             </div>
@@ -249,7 +249,7 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
                 className="flex-1 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-indigo-500/25"
               >
                 <BarChart3 className="w-4 h-4" />
-                <span>查看統計數據</span>
+                <span>View Results</span>
               </button>
             </div>
           </div>
@@ -260,8 +260,8 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
               <ShieldAlert className="w-8 h-8" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">本場投票已截止</h3>
-              <p className="text-xs text-slate-400 mt-1">此項目已於期限屆滿後自動關閉，無法再接收新的投票紀錄。</p>
+              <h3 className="text-lg font-bold text-white">Voting Period Has Ended</h3>
+              <p className="text-xs text-slate-400 mt-1">This poll is now closed. No new votes can be recorded.</p>
             </div>
 
             <div className="space-y-2 text-left">
@@ -280,13 +280,13 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
               className="w-full py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-indigo-500/25"
             >
               <BarChart3 className="w-4 h-4" />
-              <span>觀看投票統計結果</span>
+              <span>View Results</span>
             </button>
           </div>
         ) : (
           /* Interactive Voting List */
           <div className="space-y-4">
-            <div className="text-[10px] text-indigo-300 font-bold tracking-wider uppercase mb-1">請選擇您的選項</div>
+            <div className="text-[10px] text-indigo-300 font-bold tracking-wider uppercase mb-1">Please select an option</div>
             <div className="space-y-2.5">
               {poll.options.map((opt, idx) => {
                 const isSelected = selectedIdx === idx;
@@ -329,11 +329,11 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    <span>正在進行加密簽章並寫入...</span>
+                    <span>Submitting vote...</span>
                   </>
                 ) : (
                   <>
-                    <span>送出我的投票 (只限一次)</span>
+                    <span>Cast My Vote (Once Only)</span>
                   </>
                 )}
               </button>
@@ -342,7 +342,7 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
                 onClick={onViewResults}
                 className="w-full py-2.5 text-xs text-slate-300 font-semibold hover:text-indigo-300 transition-colors bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl cursor-pointer"
               >
-                不投票，直接看即時統計
+                Skip and view results directly
               </button>
             </div>
           </div>

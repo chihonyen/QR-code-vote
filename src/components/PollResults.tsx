@@ -79,7 +79,7 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
   }, [poll.creatorUid]);
 
   const handleClosePoll = async () => {
-    if (!window.confirm("您確定要立刻結束此投票嗎？結束後所有人（包括您自己）都將無法再進行投票。")) {
+    if (!window.confirm("Are you sure you want to end this poll now? Once ended, no one (including yourself) will be able to vote.")) {
       return;
     }
     setIsClosing(true);
@@ -90,7 +90,7 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
       poll.expiresAt = pastTime; // react locally immediately
       await fetchVotes(true); // Fetch final results immediately to display them
     } catch (err: any) {
-      alert("結束投票失敗：" + (err.message || err));
+      alert("Failed to end poll: " + (err.message || err));
     } finally {
       setIsClosing(false);
     }
@@ -161,7 +161,7 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
-        <p className="text-sm font-semibold text-slate-300">正在即時統計雲端選票...</p>
+        <p className="text-sm font-semibold text-slate-300">Synchronizing votes in real-time...</p>
       </div>
     );
   }
@@ -173,7 +173,7 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
         <div className="space-y-6">
           <div className="flex justify-between items-start border-b border-white/10 pb-4">
             <div>
-              <div className="text-[10px] text-indigo-300 font-mono tracking-wider uppercase mb-0.5">即時統計計票板</div>
+              <div className="text-[10px] text-indigo-300 font-mono tracking-wider uppercase mb-0.5">Live Results Dashboard</div>
               <h2 className="text-xl font-extrabold text-white leading-tight">{poll.title}</h2>
               {poll.description && (
                 <p className="text-xs text-slate-300 mt-1">{poll.description}</p>
@@ -183,7 +183,7 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
               onClick={() => fetchVotes(true)}
               disabled={refreshing}
               className="p-2 text-slate-400 hover:text-indigo-300 hover:bg-white/5 rounded-lg transition-all flex items-center justify-center cursor-pointer"
-              title="重新載入票數"
+              title="Refresh Votes"
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-indigo-400" : ""}`} />
             </button>
@@ -194,16 +194,16 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                  <span className="text-xs text-amber-300 font-bold">您是此投票發起人</span>
+                  <span className="text-xs text-amber-300 font-bold">You are the poll creator</span>
                 </div>
-                <p className="text-[10px] text-slate-400">目前為持續計票狀態。您可以隨時在此手動結束投票。</p>
+                <p className="text-[10px] text-slate-400">This poll is active. You can end it manually at any time.</p>
               </div>
               <button
                 onClick={handleClosePoll}
                 disabled={isClosing}
                 className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-amber-500/15 flex-shrink-0"
               >
-                {isClosing ? "結束中..." : "立刻結束投票"}
+                {isClosing ? "Closing..." : "Close Poll Now"}
               </button>
             </div>
           )}
@@ -212,8 +212,8 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
             <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl flex items-center gap-2.5">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse flex-shrink-0" />
               <div className="space-y-0.5">
-                <span className="text-xs text-rose-300 font-bold">🔒 投票已截止</span>
-                <p className="text-[10px] text-slate-400">此投票已結束計票，所有投票管道已關閉，結果已安全加密存檔。</p>
+                <span className="text-xs text-rose-300 font-bold">🔒 Voting Closed</span>
+                <p className="text-[10px] text-slate-400">The voting period has ended. All channels are closed and results are finalized.</p>
               </div>
             </div>
           )}
@@ -252,12 +252,12 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
                       </span>
                       {isWinner && (
                         <span className="px-1.5 py-0.5 text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded font-bold flex items-center gap-0.5 flex-shrink-0">
-                          {isExpired ? "🏆 最終勝出" : "🔥 領先中"}
+                          {isExpired ? "🏆 Final Winner" : "🔥 Leading"}
                         </span>
                       )}
                     </div>
                     <span className="text-slate-400 font-mono flex-shrink-0">
-                      <b className="text-white font-bold">{count} 票</b> ({percentage}%)
+                      <b className="text-white font-bold">{count} votes</b> ({percentage}%)
                     </span>
                   </div>
 
@@ -280,9 +280,9 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
 
           {/* Total Sum */}
           <div className="pt-4 border-t border-white/10 flex justify-between items-center text-xs text-slate-400">
-            <span>本項目設有 Cloud 防灌票安全規則保護</span>
+            <span>Protected by secure cloud anti-fraud rules</span>
             <span className="font-mono text-slate-300">
-              總票數：<b className="text-indigo-300 text-sm font-bold">{totalVotes}</b> 票
+              Total Votes: <b className="text-indigo-300 text-sm font-bold">{totalVotes}</b>
             </span>
           </div>
         </div>
@@ -294,13 +294,13 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
             className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>返回投票畫面</span>
+            <span>Back to Vote Page</span>
           </button>
           <button
             onClick={onGoHome}
             className="flex-1 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-indigo-500/25"
           >
-            <span>發起新投票</span>
+            <span>Create New Poll</span>
           </button>
         </div>
       </div>
@@ -310,7 +310,7 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
         <div className="space-y-4 text-center sm:text-left">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-300 border-b border-white/10 pb-3">
             <Share2 className="w-4 h-4 text-slate-400" />
-            <span>分享此投票 (行動掃碼)</span>
+            <span>Share Poll (QR Code)</span>
           </div>
 
           <div className="flex flex-col items-center justify-center bg-white p-4 rounded-xl border border-white/10 shadow-lg max-w-[200px] mx-auto">
@@ -320,18 +320,18 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
               className="mt-2 flex items-center gap-1.5 text-[10px] text-indigo-500 font-semibold hover:text-indigo-600 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>下載 QR Code 圖檔</span>
+              <span>Download QR Code</span>
             </button>
           </div>
 
           <p className="text-xs text-slate-400 text-center leading-relaxed">
-            手機掃描上方二維條碼即可快速投下您的選票。本畫面完美適配行動版裝置！
+            Scan this QR code with your mobile device to quickly cast your vote.
           </p>
         </div>
 
         {/* Link Copy Box */}
         <div className="space-y-2">
-          <label className="block text-xs font-semibold text-slate-300">投票與計票網址</label>
+          <label className="block text-xs font-semibold text-slate-300">Poll URL</label>
           <div className="flex gap-2">
             <input
               type="text"
@@ -346,7 +346,7 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
                   ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-300"
                   : "bg-white/5 border-white/10 hover:bg-white/10 text-slate-300"
               }`}
-              title="複製連結"
+              title="Copy Link"
             >
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             </button>

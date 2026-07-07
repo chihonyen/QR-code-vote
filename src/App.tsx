@@ -10,8 +10,7 @@ import SecurityGuide from "./components/SecurityGuide";
 type ViewState = 
   | { type: "CREATE" }
   | { type: "VOTE"; pollId: string; poll: Poll }
-  | { type: "RESULTS"; pollId: string; poll: Poll }
-  | { type: "GUIDE" };
+  | { type: "RESULTS"; pollId: string; poll: Poll };
 
 export default function App() {
   const [view, setView] = useState<ViewState>({ type: "CREATE" });
@@ -26,11 +25,6 @@ export default function App() {
 
       if (!hash || hash === "#/" || hash === "#" || hash === "#/create") {
         setView({ type: "CREATE" });
-        return;
-      }
-
-      if (hash === "#/guide") {
-        setView({ type: "GUIDE" });
         return;
       }
 
@@ -109,7 +103,7 @@ export default function App() {
         {isFirebaseConfigured ? (
           <span>🔌 Successfully connected to your dedicated Firebase Realtime Database</span>
         ) : (
-          <span>💡 Currently in "Sandbox Mode". Click on the Security Guide to see how to connect to Firestore.</span>
+          <span>💡 Currently in "Sandbox Mode". Live results are simulated locally.</span>
         )}
       </div>
 
@@ -139,18 +133,6 @@ export default function App() {
             >
               <PlusCircle className="w-3.5 h-3.5" />
               <span>Create Poll</span>
-            </button>
-
-            <button
-              onClick={() => navigateTo("#/guide")}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                view.type === "GUIDE"
-                  ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-md"
-                  : "text-slate-300 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <HelpCircle className="w-3.5 h-3.5" />
-              <span>Security Guide</span>
             </button>
           </nav>
         </div>
@@ -193,10 +175,6 @@ export default function App() {
                 onBackToVote={() => navigateTo(`#/poll/${view.pollId}`)}
                 onGoHome={() => navigateTo("#")}
               />
-            )}
-
-            {view.type === "GUIDE" && (
-              <SecurityGuide />
             )}
           </div>
         )}
