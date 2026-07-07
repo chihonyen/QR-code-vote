@@ -1,0 +1,6 @@
+{
+  "name": "Secure Voting System",
+  "description": "A secure, serverless voting application with Firebase Anonymous Auth and Firestore Security Rules to prevent double-voting and data tampering.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
