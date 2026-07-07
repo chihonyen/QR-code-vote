@@ -80,10 +80,14 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
       setTitle("中午吃什麼？");
       setDescription("大家一起投票決定今天的午餐吧！");
       setOptions(["精緻日式拉麵", "古早味排骨便當", "拿坡里窯烤披薩", "健康低卡沙拉盆"]);
-    } else {
+    } else if (num === 2) {
       setTitle("下季度員工聚餐去哪辦？");
       setDescription("請大家選出最期待的聚餐類型，福委會將根據投票結果進行預約。");
       setOptions(["頂級和牛燒肉吃到飽", "五星級飯店海鮮百匯", "米其林推薦台菜料理", "美式運動酒吧與手工漢堡"]);
+    } else if (num === 3) {
+      setTitle("Instant award winner");
+      setDescription("Choose the best hero from the options below!");
+      setOptions(["Superman", "Ironman", "Antman"]);
     }
   };
 
@@ -164,6 +168,13 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
                 className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-indigo-200 border border-indigo-500/30 rounded-lg text-xs font-semibold transition-all cursor-pointer hover:border-indigo-400"
               >
                 🎉 員工聚餐去哪辦？
+              </button>
+              <button
+                type="button"
+                onClick={() => handleLoadExample(3)}
+                className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-indigo-200 border border-indigo-500/30 rounded-lg text-xs font-semibold transition-all cursor-pointer hover:border-indigo-400"
+              >
+                🏆 Instant award winner
               </button>
             </div>
           </div>

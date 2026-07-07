@@ -19,7 +19,13 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isCreator, setIsCreator] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [isExpired, setIsExpired] = useState(Date.now() > poll.expiresAt);
+  const [pollExpiresAt, setPollExpiresAt] = useState(poll.expiresAt);
+  const isExpired = Date.now() > pollExpiresAt;
+
+  // Sync pollExpiresAt when poll.expiresAt prop changes
+  useEffect(() => {
+    setPollExpiresAt(poll.expiresAt);
+  }, [poll.expiresAt]);
 
   // Calculate Poll link based on window location
   const getPollUrl = () => {
@@ -79,8 +85,9 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
     setIsClosing(true);
     try {
       await closePollInDB(poll.id);
-      setIsExpired(true);
-      poll.expiresAt = Date.now() - 1000; // react locally immediately
+      const pastTime = Date.now() - 1000;
+      setPollExpiresAt(pastTime);
+      poll.expiresAt = pastTime; // react locally immediately
       await fetchVotes(true); // Fetch final results immediately to display them
     } catch (err: any) {
       alert("結束投票失敗：" + (err.message || err));
@@ -119,6 +126,18 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
 
   // Find the highest vote count to highlight the winner
   const maxVotes = Math.max(...Object.values(optionCounts), 0);
+
+  // Map options with their index and vote counts, then sort them descending by vote count
+  const sortedOptions = poll.options.map((opt, idx) => {
+    const count = optionCounts[idx] || 0;
+    const percentage = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+    return {
+      text: opt,
+      originalIdx: idx,
+      count,
+      percentage
+    };
+  }).sort((a, b) => b.count - a.count);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(pollUrl);
@@ -193,22 +212,29 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
             <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl flex items-center gap-2.5">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse flex-shrink-0" />
               <div className="space-y-0.5">
-                <span className="text-xs text-rose-300 font-bold">🔒 此投票已結束計票</span>
-                <p className="text-[10px] text-slate-400">所有投票管道已關閉，結果已安全加密存檔。</p>
+                <span className="text-xs text-rose-300 font-bold">🔒 投票已截止</span>
+                <p className="text-[10px] text-slate-400">此投票已結束計票，所有投票管道已關閉，結果已安全加密存檔。</p>
               </div>
             </div>
           )}
 
           {/* Stats Bar List */}
           <div className="space-y-3">
-            {poll.options.map((opt, idx) => {
-              const count = optionCounts[idx] || 0;
-              const percentage = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+            {sortedOptions.map((optObj, sortedIdx) => {
+              const { text, originalIdx, count, percentage } = optObj;
               const isWinner = count > 0 && count === maxVotes;
+
+              // Color-coded ranks for Top 3
+              const rankColors = [
+                "bg-amber-400 text-slate-900 border-amber-300", // 1st Place (Gold)
+                "bg-slate-300 text-slate-900 border-slate-200", // 2nd Place (Silver)
+                "bg-amber-600 text-white border-amber-500", // 3rd Place (Bronze)
+              ];
+              const rankClass = rankColors[sortedIdx] || "bg-white/10 text-slate-300 border-white/5";
 
               return (
                 <div 
-                  key={idx} 
+                  key={originalIdx} 
                   className={`p-3.5 rounded-xl border transition-all duration-500 flex flex-col gap-2 ${
                     isWinner 
                       ? "bg-indigo-500/10 border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.1)]" 
@@ -216,17 +242,21 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
                   }`}
                 >
                   <div className="flex justify-between items-center text-xs font-semibold">
-                    <div className="flex items-center gap-2 truncate max-w-[70%]">
+                    <div className="flex items-center gap-2.5 truncate max-w-[70%]">
+                      {/* Rank badge */}
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center font-extrabold text-[10px] border shadow-sm ${rankClass} flex-shrink-0`}>
+                        {sortedIdx + 1}
+                      </span>
                       <span className={`truncate ${isWinner ? "text-indigo-200 font-bold" : "text-slate-300"}`}>
-                        {opt}
+                        {text}
                       </span>
                       {isWinner && (
-                        <span className="px-1.5 py-0.5 text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded font-bold flex items-center gap-0.5">
+                        <span className="px-1.5 py-0.5 text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded font-bold flex items-center gap-0.5 flex-shrink-0">
                           {isExpired ? "🏆 最終勝出" : "🔥 領先中"}
                         </span>
                       )}
                     </div>
-                    <span className="text-slate-400 font-mono">
+                    <span className="text-slate-400 font-mono flex-shrink-0">
                       <b className="text-white font-bold">{count} 票</b> ({percentage}%)
                     </span>
                   </div>
