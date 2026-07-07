@@ -2,48 +2,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: check if poll has expired
-    function pollNotExpired(pollId) {
-      return request.time < get(/databases/$(database)/documents/polls/$(pollId)).data.expiresAt;
-    }
-
     // Polls Collection Rules
     match /polls/{pollId} {
-      // Anyone can read a poll to see its title and options
-      allow read: if true;
-
-      // Anyone can create a poll as long as they provide the correct schema
-      allow create: if request.resource.data.title is string
-                    && request.resource.data.options is list
-                    && request.resource.data.createdAt is timestamp
-                    && request.resource.data.expiresAt is timestamp
-                    && request.resource.data.title.size() > 0
-                    && request.resource.data.options.size() >= 2
-                    && (request.resource.data.creatorUid == null || request.resource.data.creatorUid is string);
-
-      // Creator can update the poll (e.g., to close/end it) but is forbidden from modifying the title or options
-      allow update: if request.auth != null 
-                    && resource.data.creatorUid == request.auth.uid
-                    && request.resource.data.title == resource.data.title
-                    && request.resource.data.options == resource.data.options;
-      allow delete: if false;
+      allow read, write: if true;
     }
 
     // Votes Subcollection Rules
     match /polls/{pollId}/votes/{voterUid} {
-      // Anyone can read votes to count them and build the dynamic charts
-      allow read: if true;
-
-      // To vote, the user must be authenticated (supports anonymous auth).
-      // They can only create a vote where the voterUid matches their authenticated UID.
-      // The poll must not be expired, and they cannot edit or delete their vote after casting it.
-      allow create: if request.auth != null 
-                    && request.auth.uid == voterUid
-                    && pollNotExpired(pollId)
-                    && request.resource.data.optionIndex is int
-                    && request.resource.data.votedAt is timestamp;
-
-      // Once cast, a vote can never be updated or deleted
+      allow read, create: if true;
       allow update, delete: if false;
     }
   }

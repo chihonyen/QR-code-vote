@@ -7,7 +7,8 @@ import {
   getDoc, 
   getDocs, 
   Timestamp,
-  updateDoc
+  updateDoc,
+  onSnapshot
 } from "firebase/firestore";
 import { getAuth, signInAnonymously, User } from "firebase/auth";
 import { Poll, Vote } from "../types";
@@ -132,11 +133,12 @@ export async function createPollInDB(pollData: Omit<Poll, "id" | "createdAt">): 
       });
       return pollId;
     } catch (error) {
-      console.error("Firestore write failed, using local simulation instead:", error);
+      console.error("Firestore write failed:", error);
+      throw error;
     }
   }
 
-  // Fallback
+  // Fallback Simulation Mode
   const polls = getLocalPolls();
   polls[pollId] = fullPoll;
   saveLocalPolls(polls);
@@ -163,12 +165,14 @@ export async function getPollFromDB(pollId: string): Promise<Poll | null> {
           creatorUid: data.creatorUid
         };
       }
+      return null;
     } catch (error) {
-      console.error("Firestore read failed, searching local storage:", error);
+      console.error("Firestore read failed:", error);
+      throw error;
     }
   }
 
-  // Fallback
+  // Fallback Simulation Mode
   const polls = getLocalPolls();
   return polls[pollId] || null;
 }
@@ -187,11 +191,12 @@ export async function closePollInDB(pollId: string): Promise<void> {
       });
       return;
     } catch (error) {
-      console.error("Firestore poll update failed, using local storage simulation:", error);
+      console.error("Firestore poll update failed:", error);
+      throw error;
     }
   }
 
-  // Fallback
+  // Fallback Simulation Mode
   const polls = getLocalPolls();
   if (polls[pollId]) {
     polls[pollId].expiresAt = expiresAt;
@@ -204,49 +209,47 @@ export async function closePollInDB(pollId: string): Promise<void> {
  */
 export async function castVoteInDB(pollId: string, voterUid: string, optionIndex: number): Promise<void> {
   const poll = await getPollFromDB(pollId);
-  if (!poll) throw new Error("Poll not found.");
+  if (!poll) throw new Error("找不到投票項目。");
 
   if (Date.now() > poll.expiresAt) {
-    throw new Error("This poll has already expired and is closed for voting.");
+    throw new Error("此投票已截止，無法再進行投票。");
   }
 
   if (isFirebaseConfigured && db) {
-    try {
-      // Structure: polls/{pollId}/votes/{voterUid}
-      const voteRef = doc(db, "polls", pollId, "votes", voterUid);
-      
-      // Check if user has already voted
-      const voteSnap = await getDoc(voteRef);
-      if (voteSnap.exists()) {
-        throw new Error("You have already voted in this poll. Your vote is locked.");
-      }
+    // Structure: polls/{pollId}/votes/{voterUid}
+    const voteRef = doc(db, "polls", pollId, "votes", voterUid);
+    
+    // Check if user has already voted
+    const voteSnap = await getDoc(voteRef);
+    if (voteSnap.exists()) {
+      throw new Error("您在該項目中已經投過票了，無法重複投票！");
+    }
 
+    try {
       await setDoc(voteRef, {
         optionIndex,
         votedAt: Timestamp.now()
       });
       return;
     } catch (error: any) {
-      if (error.message && error.message.includes("permission-denied")) {
-        throw new Error("Security rule rejection: You cannot vote twice or modify cast votes.");
-      }
-      console.error("Firestore vote failed, attempting simulation:", error);
+      console.error("Firestore vote failed:", error);
+      throw new Error("雲端投票提交失敗：" + (error.message || error));
     }
-  }
+  } else {
+    // Fallback Simulation Mode
+    const localVotes = getLocalVotes(pollId);
+    const existingVote = localVotes.find(v => v.voterUid === voterUid);
+    if (existingVote) {
+      throw new Error("您在該項目中已經投過票了，無法重複投票！");
+    }
 
-  // Fallback
-  const localVotes = getLocalVotes(pollId);
-  const existingVote = localVotes.find(v => v.voterUid === voterUid);
-  if (existingVote) {
-    throw new Error("You have already voted in this poll. Your vote is locked.");
+    localVotes.push({
+      voterUid,
+      optionIndex,
+      votedAt: Date.now()
+    });
+    saveLocalVotes(pollId, localVotes);
   }
-
-  localVotes.push({
-    voterUid,
-    optionIndex,
-    votedAt: Date.now()
-  });
-  saveLocalVotes(pollId, localVotes);
 }
 
 /**
@@ -268,10 +271,40 @@ export async function getVotesFromDB(pollId: string): Promise<Vote[]> {
       });
       return list;
     } catch (error) {
-      console.error("Firestore votes fetch failed, reading from simulation:", error);
+      console.error("Firestore votes fetch failed:", error);
+      throw error;
     }
   }
 
-  // Fallback
+  // Fallback Simulation Mode
   return getLocalVotes(pollId);
+}
+
+/**
+ * Subscribes to votes of a poll in real-time
+ */
+export function subscribeToVotes(pollId: string, callback: (votes: Vote[]) => void): () => void {
+  if (isFirebaseConfigured && db) {
+    const votesColRef = collection(db, "polls", pollId, "votes");
+    return onSnapshot(votesColRef, (snapshot) => {
+      const list: Vote[] = [];
+      snapshot.forEach((d) => {
+        const data = d.data();
+        list.push({
+          voterUid: d.id,
+          optionIndex: data.optionIndex,
+          votedAt: data.votedAt?.toMillis() || Date.now()
+        });
+      });
+      callback(list);
+    }, (error) => {
+      console.error("Firestore real-time subscription error:", error);
+    });
+  }
+
+  // Fallback Simulation Mode - poll local storage
+  const interval = setInterval(() => {
+    callback(getLocalVotes(pollId));
+  }, 2000);
+  return () => clearInterval(interval);
 }

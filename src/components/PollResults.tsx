@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Poll, Vote } from "../types";
-import { getVotesFromDB, getAnonymousUser, closePollInDB } from "../lib/firebase";
+import { getVotesFromDB, getAnonymousUser, closePollInDB, subscribeToVotes } from "../lib/firebase";
 import { BarChart3, RefreshCw, Share2, Copy, Check, ArrowLeft, Download } from "lucide-react";
 import QRCode from "qrcode";
 
@@ -46,19 +46,16 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
     }
   };
 
-  // Initial Fetch & QR Code generation
+  // Real-time synchronization of votes
   useEffect(() => {
-    fetchVotes();
-    
-    // Auto refresh every 10 seconds for active polls
-    const interval = setInterval(() => {
-      if (!isExpired) {
-        fetchVotes(true);
-      }
-    }, 10000);
+    setLoading(true);
+    const unsubscribe = subscribeToVotes(poll.id, (list) => {
+      setVotes(list);
+      setLoading(false);
+    });
 
-    return () => clearInterval(interval);
-  }, [poll.id, isExpired]);
+    return () => unsubscribe();
+  }, [poll.id]);
 
   // Check if current user is the creator of the poll
   useEffect(() => {
