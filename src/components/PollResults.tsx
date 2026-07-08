@@ -260,7 +260,7 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
                       )}
                     </div>
                     <span className="text-slate-400 font-mono flex-shrink-0">
-                      <b className="text-white font-bold">{count} votes</b> ({percentage}%)
+                      <b className="text-white font-bold">{count} votes</b>
                     </span>
                   </div>
 
@@ -285,7 +285,7 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
           <div className="pt-4 border-t border-white/10 flex justify-between items-center text-xs text-slate-400">
             <span>Protected by secure cloud anti-fraud rules</span>
             <span className="font-mono text-slate-300">
-              Total Votes: <b className="text-indigo-300 text-sm font-bold">{totalVotes}</b>
+              Total Voters: <b className="text-indigo-300 text-sm font-bold">{totalVotes}</b>
             </span>
           </div>
         </div>
