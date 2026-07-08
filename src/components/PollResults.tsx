@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Poll, Vote } from "../types";
-import { getVotesFromDB, getAnonymousUser, closePollInDB, subscribeToVotes } from "../lib/firebase";
-import { BarChart3, RefreshCw, Share2, Copy, Check, ArrowLeft, Download } from "lucide-react";
+import { getVotesFromDB, getAnonymousUser, closePollInDB, subscribeToVotes, subscribeToPoll } from "../lib/firebase";
+import { BarChart3, RefreshCw, Share2, Copy, Check, ArrowLeft, Download, Clock } from "lucide-react";
 import QRCode from "qrcode";
 
 interface PollResultsProps {
@@ -10,7 +10,7 @@ interface PollResultsProps {
   onGoHome: () => void;
 }
 
-export default function PollResults({ poll, onBackToVote, onGoHome }: PollResultsProps) {
+export default function PollResults({ poll: initialPoll, onBackToVote, onGoHome }: PollResultsProps) {
   const [votes, setVotes] = useState<Vote[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -19,13 +19,72 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isCreator, setIsCreator] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [pollExpiresAt, setPollExpiresAt] = useState(poll.expiresAt);
-  const isExpired = Date.now() > pollExpiresAt;
+  const [pollExpiresAt, setPollExpiresAt] = useState(initialPoll.expiresAt);
+  const [currentPoll, setCurrentPoll] = useState<Poll>(initialPoll);
+  const [manuallyClosed, setManuallyClosed] = useState(initialPoll.expiresAt <= Date.now());
+  const [timeLeftStr, setTimeLeftStr] = useState<string>("");
+  const isExpired = Date.now() > pollExpiresAt || manuallyClosed;
 
-  // Sync pollExpiresAt when poll.expiresAt prop changes
+  // Sync currentPoll and pollExpiresAt with subscription
   useEffect(() => {
-    setPollExpiresAt(poll.expiresAt);
-  }, [poll.expiresAt]);
+    const unsubscribe = subscribeToPoll(initialPoll.id, (updatedPoll) => {
+      if (updatedPoll) {
+        setCurrentPoll(updatedPoll);
+        setPollExpiresAt(updatedPoll.expiresAt);
+        if (updatedPoll.expiresAt <= Date.now()) {
+          setManuallyClosed(true);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [initialPoll.id]);
+
+  // Sync pollExpiresAt and currentPoll when initialPoll prop changes
+  useEffect(() => {
+    setCurrentPoll(initialPoll);
+    setPollExpiresAt(initialPoll.expiresAt);
+    setManuallyClosed(initialPoll.expiresAt <= Date.now());
+  }, [initialPoll]);
+
+  // Expiration countdown
+  useEffect(() => {
+    const hasAutoExpiry = pollExpiresAt - currentPoll.createdAt <= 30 * 24 * 60 * 60 * 1000;
+    if (!hasAutoExpiry || isExpired) {
+      setTimeLeftStr("");
+      return;
+    }
+
+    function updateCountdown() {
+      const diff = pollExpiresAt - Date.now();
+      if (diff <= 0) {
+        setTimeLeftStr("Closed");
+        setManuallyClosed(true);
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      if (hours > 24) {
+        const days = Math.floor(hours / 24);
+        setTimeLeftStr(`${days}d ${hours % 24}h left`);
+      } else if (hours > 0) {
+        setTimeLeftStr(`${hours}h ${minutes}m ${seconds}s left`);
+      } else if (minutes > 0) {
+        setTimeLeftStr(`${minutes}m ${seconds}s left`);
+      } else {
+        setTimeLeftStr(`${seconds}s left`);
+      }
+    }
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [pollExpiresAt, currentPoll.createdAt, isExpired]);
+
+  const poll = currentPoll;
+
 
   // Calculate Poll link based on window location
   const getPollUrl = () => {
@@ -87,6 +146,7 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
       await closePollInDB(poll.id);
       const pastTime = Date.now() - 1000;
       setPollExpiresAt(pastTime);
+      setManuallyClosed(true);
       poll.expiresAt = pastTime; // react locally immediately
       await fetchVotes(true); // Fetch final results immediately to display them
     } catch (err: any) {
@@ -128,7 +188,7 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
   }, {} as Record<number, number>);
 
   // Find the highest vote count to highlight the winner
-  const maxVotes = Math.max(...Object.values(optionCounts), 0);
+  const maxVotes = Math.max(...(Object.values(optionCounts) as number[]), 0);
 
   // Map options with their index and vote counts, then sort them descending by vote count
   const sortedOptions = poll.options.map((opt, idx) => {
@@ -181,6 +241,12 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
               {poll.description && (
                 <p className="text-xs text-slate-300 mt-1">{poll.description}</p>
               )}
+              {timeLeftStr && !isExpired && (
+                <div className="mt-3.5 inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 rounded-xl text-xs font-bold font-mono shadow-lg shadow-indigo-500/5">
+                  <Clock className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
+                  <span>Time Remaining: {timeLeftStr}</span>
+                </div>
+              )}
             </div>
             <button
               onClick={() => fetchVotes(true)}
@@ -192,33 +258,51 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
             </button>
           </div>
 
-          {isCreator && !isExpired && (
-            <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                  <span className="text-xs text-amber-300 font-bold">You are the poll creator</span>
+          {isCreator ? (
+            isExpired ? (
+              <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse flex-shrink-0" />
+                <div className="space-y-0.5">
+                  <span className="text-xs text-rose-300 font-bold">🔒 Voting Closed</span>
+                  <p className="text-[10px] text-slate-400">The voting period has ended. All channels are closed and results are finalized.</p>
                 </div>
-                <p className="text-[10px] text-slate-400">This poll is active. You can end it manually at any time.</p>
               </div>
-              <button
-                onClick={handleClosePoll}
-                disabled={isClosing}
-                className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-amber-500/15 flex-shrink-0"
-              >
-                {isClosing ? "Closing..." : "Close Poll Now"}
-              </button>
-            </div>
-          )}
-
-          {isExpired && (
-            <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse flex-shrink-0" />
-              <div className="space-y-0.5">
-                <span className="text-xs text-rose-300 font-bold">🔒 Voting Closed</span>
-                <p className="text-[10px] text-slate-400">The voting period has ended. All channels are closed and results are finalized.</p>
+            ) : (
+              <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                    <span className="text-xs text-amber-300 font-bold">You are the poll creator</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400">This poll is active. You can end it manually at any time.</p>
+                </div>
+                <button
+                  onClick={handleClosePoll}
+                  disabled={isClosing}
+                  className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-amber-500/15 flex-shrink-0"
+                >
+                  {isClosing ? "Closing..." : "Close Poll Now"}
+                </button>
               </div>
-            </div>
+            )
+          ) : (
+            isExpired ? (
+              <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse flex-shrink-0" />
+                <div className="space-y-0.5">
+                  <span className="text-xs text-rose-300 font-bold">🔒 Voting Closed</span>
+                  <p className="text-[10px] text-slate-400">The voting period has ended. All channels are closed and results are finalized.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                <div className="space-y-0.5">
+                  <span className="text-xs text-emerald-300 font-bold">⚡ Voting in Progress</span>
+                  <p className="text-[10px] text-slate-400">This poll is currently open for submissions. Check back for final results.</p>
+                </div>
+              </div>
+            )
           )}
 
           {/* Stats Bar List */}

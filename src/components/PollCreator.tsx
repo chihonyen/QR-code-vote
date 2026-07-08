@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Trash, Sparkles, ChevronRight, BarChart3, Vote } from "lucide-react";
+import { Plus, Trash, Sparkles, ChevronRight, BarChart3, Vote, Clock } from "lucide-react";
 import { createPollInDB, getAnonymousUser, getPollFromDB } from "../lib/firebase";
 
 interface PollCreatorProps {
@@ -15,6 +15,7 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
   const [createdPolls, setCreatedPolls] = useState<{ id: string; title: string }[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [maxChoices, setMaxChoices] = useState<number>(1);
+  const [autoCloseMinutes, setAutoCloseMinutes] = useState<number>(0); // 0 means Indefinitely
 
   // Auto-cap max choices when options list shrinks
   useEffect(() => {
@@ -118,8 +119,10 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
     setIsSubmitting(true);
     try {
       const user = await getAnonymousUser();
-      // Poll is active indefinitely (e.g. 100 years) until manually closed by creator
-      const expiresAt = Date.now() + 100 * 365 * 24 * 60 * 60 * 1000; 
+      // Calculate expiresAt based on selected auto-close minutes
+      const expiresAt = autoCloseMinutes > 0
+        ? Date.now() + autoCloseMinutes * 60 * 1000
+        : Date.now() + 100 * 365 * 24 * 60 * 60 * 1000; 
       
       const actualMaxChoices = Math.min(maxChoices, filteredOptions.length);
 
@@ -286,6 +289,34 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
             </select>
             <p className="text-[10px] text-slate-400 leading-normal">
               Specify the maximum number of choices a voter can select in their response. Choosing 1 creates a traditional single-choice poll.
+            </p>
+          </div>
+
+          {/* Auto Close Poll Selector */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-slate-300 flex justify-between items-center">
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Auto Close Poll</span>
+              </span>
+              <span className="text-[10px] text-indigo-300 font-mono font-bold bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded">
+                {autoCloseMinutes === 0 ? "Indefinitely" : autoCloseMinutes < 60 ? `${autoCloseMinutes} minutes` : `${autoCloseMinutes / 60} ${autoCloseMinutes / 60 === 1 ? 'hour' : 'hours'}`}
+              </span>
+            </label>
+            <select
+              value={autoCloseMinutes}
+              onChange={(e) => setAutoCloseMinutes(Number(e.target.value))}
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all text-sm text-white font-medium"
+            >
+              <option value={0} className="bg-slate-950 text-white">Indefinitely (Manual Close Only)</option>
+              <option value={5} className="bg-slate-950 text-white">5 Minutes</option>
+              <option value={30} className="bg-slate-950 text-white">30 Minutes</option>
+              <option value={60} className="bg-slate-950 text-white">1 Hour</option>
+              <option value={720} className="bg-slate-950 text-white">12 Hours</option>
+              <option value={1440} className="bg-slate-950 text-white">24 Hours</option>
+            </select>
+            <p className="text-[10px] text-slate-400 leading-normal">
+              Set the duration after which the poll will automatically close and stop accepting votes.
             </p>
           </div>
 

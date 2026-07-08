@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Vote as VoteType, Poll } from "../types";
-import { getAnonymousUser, castVoteInDB, getVotesFromDB, closePollInDB, getPollFromDB } from "../lib/firebase";
+import { getAnonymousUser, castVoteInDB, getVotesFromDB, closePollInDB, getPollFromDB, subscribeToPoll } from "../lib/firebase";
 import { Check, ShieldAlert, Clock, CheckCircle2, UserCheck, BarChart3, AlertTriangle } from "lucide-react";
 
 interface PollVoterProps {
@@ -9,8 +9,10 @@ interface PollVoterProps {
   onViewResults: () => void;
 }
 
-export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoterProps) {
+export default function PollVoter({ poll: initialPoll, onVoteCast, onViewResults }: PollVoterProps) {
   const [selectedIdxs, setSelectedIdxs] = useState<number[]>([]);
+  const [currentPoll, setCurrentPoll] = useState<Poll>(initialPoll);
+  const poll = currentPoll;
   const maxChoices = poll.maxChoices || 1;
   const [voterUid, setVoterUid] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState<boolean>(false);
@@ -25,6 +27,24 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
 
   const isExpired = Date.now() > poll.expiresAt;
 
+  // Real-time synchronization of the poll document
+  useEffect(() => {
+    const unsubscribe = subscribeToPoll(initialPoll.id, (updatedPoll) => {
+      if (updatedPoll) {
+        setCurrentPoll(updatedPoll);
+        if (updatedPoll.expiresAt <= Date.now()) {
+          onViewResults();
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [initialPoll.id, onViewResults]);
+
+  // Sync state if initialPoll prop changes
+  useEffect(() => {
+    setCurrentPoll(initialPoll);
+  }, [initialPoll]);
+
   // Auto-redirect to results if the poll has already expired
   useEffect(() => {
     if (isExpired && !loading) {
@@ -32,29 +52,6 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
     }
   }, [isExpired, loading, onViewResults]);
 
-  // Poll the database to detect if the creator ended the poll early
-  useEffect(() => {
-    let active = true;
-    const checkPollStatus = async () => {
-      try {
-        const latestPoll = await getPollFromDB(poll.id);
-        if (latestPoll && active) {
-          if (latestPoll.expiresAt <= Date.now()) {
-            onViewResults();
-          }
-        }
-      } catch (err) {
-        console.error("Error polling poll status:", err);
-      }
-    };
-
-    // Check every 3 seconds for fast dynamic responsiveness
-    const intervalId = setInterval(checkPollStatus, 3000);
-    return () => {
-      active = false;
-      clearInterval(intervalId);
-    };
-  }, [poll.id, onViewResults]);
 
   // Initialize Anonymous authentication and check if already voted
   useEffect(() => {
@@ -186,7 +183,7 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
   return (
     <div className="max-w-xl mx-auto bg-white/5 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10 overflow-hidden" id="poll-voter">
       {/* Header Banner */}
-      <div className={`p-6 text-white relative border-b ${isExpired ? "border-white/10 bg-white/5" : hasVoted ? "border-emerald-500/20 bg-emerald-500/10" : "border-indigo-500/20 bg-indigo-500/10"}`}>
+      <div className={`p-6 text-white relative border-b ${isExpired ? "border-rose-500/20 bg-rose-500/10" : hasVoted ? "border-emerald-500/20 bg-emerald-500/10" : "border-indigo-500/20 bg-indigo-500/10"}`}>
         <div className="absolute top-4 right-4 flex items-center gap-1 bg-white/10 backdrop-blur-xl border border-white/10 px-2.5 py-1 rounded-full text-[10px] font-bold">
           <Clock className="w-3.5 h-3.5" />
           <span>{timeLeftStr}</span>

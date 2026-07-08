@@ -316,3 +316,39 @@ export function subscribeToVotes(pollId: string, callback: (votes: Vote[]) => vo
   }, 2000);
   return () => clearInterval(interval);
 }
+
+/**
+ * Subscribes to changes in a specific poll document in real-time
+ */
+export function subscribeToPoll(pollId: string, callback: (poll: Poll | null) => void): () => void {
+  if (isFirebaseConfigured && db) {
+    const pollRef = doc(db, "polls", pollId);
+    return onSnapshot(pollRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        callback({
+          id: snapshot.id,
+          title: data.title,
+          description: data.description,
+          options: data.options,
+          createdAt: data.createdAt?.toMillis() || Date.now(),
+          expiresAt: data.expiresAt?.toMillis() || Date.now(),
+          creatorUid: data.creatorUid,
+          maxChoices: data.maxChoices || 1
+        });
+      } else {
+        callback(null);
+      }
+    }, (error) => {
+      console.error("Firestore poll subscription error:", error);
+    });
+  }
+
+  // Fallback Simulation Mode - poll local storage
+  const interval = setInterval(() => {
+    const polls = getLocalPolls();
+    callback(polls[pollId] || null);
+  }, 2000);
+  return () => clearInterval(interval);
+}
+
