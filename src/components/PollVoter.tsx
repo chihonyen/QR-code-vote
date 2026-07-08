@@ -10,10 +10,12 @@ interface PollVoterProps {
 }
 
 export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoterProps) {
-  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [selectedIdxs, setSelectedIdxs] = useState<number[]>([]);
+  const maxChoices = poll.maxChoices || 1;
   const [voterUid, setVoterUid] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState<boolean>(false);
   const [previousVoteIdx, setPreviousVoteIdx] = useState<number | null>(null);
+  const [previousVoteIndices, setPreviousVoteIndices] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [casting, setCasting] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -71,7 +73,9 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
         const userVote = votesList.find((v) => v.voterUid === user.uid);
         if (userVote) {
           setHasVoted(true);
-          setPreviousVoteIdx(userVote.optionIndex);
+          const indices = userVote.optionIndices || (userVote.optionIndex !== undefined ? [userVote.optionIndex] : []);
+          setPreviousVoteIndices(indices);
+          setPreviousVoteIdx(indices[0] ?? null);
         }
       } catch (err: any) {
         console.error("Initialization error:", err);
@@ -135,15 +139,30 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
     }
   };
 
+  const handleToggleOption = (idx: number) => {
+    if (maxChoices <= 1) {
+      setSelectedIdxs([idx]);
+    } else {
+      if (selectedIdxs.includes(idx)) {
+        setSelectedIdxs(selectedIdxs.filter((i) => i !== idx));
+      } else {
+        if (selectedIdxs.length < maxChoices) {
+          setSelectedIdxs([...selectedIdxs, idx]);
+        }
+      }
+    }
+  };
+
   const handleCastVote = async () => {
-    if (selectedIdx === null || !voterUid) return;
+    if (selectedIdxs.length === 0 || !voterUid) return;
     setCasting(true);
     setError(null);
 
     try {
-      await castVoteInDB(poll.id, voterUid, selectedIdx);
+      await castVoteInDB(poll.id, voterUid, selectedIdxs[0], selectedIdxs);
       setHasVoted(true);
-      setPreviousVoteIdx(selectedIdx);
+      setPreviousVoteIndices(selectedIdxs);
+      setPreviousVoteIdx(selectedIdxs[0]);
       onVoteCast();
     } catch (err: any) {
       setError(err.message || "Failed to submit vote. Please try again.");
@@ -234,12 +253,27 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
             </div>
 
             <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-left space-y-2">
-              <div className="text-[10px] text-slate-400 font-mono">Your Choice:</div>
-              <div className="p-3 bg-white/5 rounded-lg border border-white/10 flex justify-between items-center text-sm font-semibold text-white">
-                <span>{poll.options[previousVoteIdx ?? 0]}</span>
-                <span className="text-xs text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded">
-                  {previousVoteIdx !== null ? `Option ${previousVoteIdx + 1}` : ""}
-                </span>
+              <div className="text-[10px] text-slate-400 font-mono">
+                {previousVoteIndices.length > 1 ? "Your Choices:" : "Your Choice:"}
+              </div>
+              <div className="space-y-2">
+                {previousVoteIndices.length > 0 ? (
+                  previousVoteIndices.map((idx) => (
+                    <div key={idx} className="p-3 bg-white/5 rounded-lg border border-white/10 flex justify-between items-center text-sm font-semibold text-white">
+                      <span>{poll.options[idx]}</span>
+                      <span className="text-xs text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded">
+                        Option {idx + 1}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-3 bg-white/5 rounded-lg border border-white/10 flex justify-between items-center text-sm font-semibold text-white">
+                    <span>{poll.options[previousVoteIdx ?? 0]}</span>
+                    <span className="text-xs text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded">
+                      {previousVoteIdx !== null ? `Option ${previousVoteIdx + 1}` : ""}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -286,15 +320,24 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
         ) : (
           /* Interactive Voting List */
           <div className="space-y-4">
-            <div className="text-[10px] text-indigo-300 font-bold tracking-wider uppercase mb-1">Please select an option</div>
+            <div className="flex justify-between items-center mb-1">
+              <div className="text-[10px] text-indigo-300 font-bold tracking-wider uppercase">
+                {maxChoices === 1 ? "Please select an option" : `Please select up to ${maxChoices} options`}
+              </div>
+              {maxChoices > 1 && (
+                <div className="text-[10px] text-slate-400 font-semibold bg-white/5 border border-white/10 px-2 py-0.5 rounded-md">
+                  {selectedIdxs.length} / {maxChoices} selected
+                </div>
+              )}
+            </div>
             <div className="space-y-2.5">
               {poll.options.map((opt, idx) => {
-                const isSelected = selectedIdx === idx;
+                const isSelected = selectedIdxs.includes(idx);
                 return (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setSelectedIdx(idx)}
+                    onClick={() => handleToggleOption(idx)}
                     className={`w-full p-4 rounded-xl border text-left text-sm font-semibold transition-all flex justify-between items-center relative overflow-hidden cursor-pointer ${
                       isSelected
                         ? "border-indigo-400 bg-indigo-500/20 text-white shadow-lg"
@@ -315,12 +358,12 @@ export default function PollVoter({ poll, onVoteCast, onViewResults }: PollVoter
                 );
               })}
             </div>
-
+ 
             {/* Form Actions */}
             <div className="pt-4 border-t border-white/10 space-y-3">
               <button
                 onClick={handleCastVote}
-                disabled={selectedIdx === null || casting}
+                disabled={selectedIdxs.length === 0 || casting}
                 className="w-full py-3.5 bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 disabled:bg-white/5 disabled:text-slate-500 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 cursor-pointer"
               >
                 {casting ? (

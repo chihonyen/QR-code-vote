@@ -14,6 +14,14 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
   const [error, setError] = useState<string | null>(null);
   const [createdPolls, setCreatedPolls] = useState<{ id: string; title: string }[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [maxChoices, setMaxChoices] = useState<number>(1);
+
+  // Auto-cap max choices when options list shrinks
+  useEffect(() => {
+    if (maxChoices > options.length) {
+      setMaxChoices(Math.max(1, options.length));
+    }
+  }, [options.length, maxChoices]);
 
   const handleDeleteRecord = (idToDelete: string) => {
     const updatedPolls = createdPolls.filter(p => p.id !== idToDelete);
@@ -113,12 +121,15 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
       // Poll is active indefinitely (e.g. 100 years) until manually closed by creator
       const expiresAt = Date.now() + 100 * 365 * 24 * 60 * 60 * 1000; 
       
+      const actualMaxChoices = Math.min(maxChoices, filteredOptions.length);
+
       const pollId = await createPollInDB({
         title: title.trim(),
         description: description.trim() || undefined,
         options: filteredOptions,
         expiresAt,
-        creatorUid: user.uid
+        creatorUid: user.uid,
+        maxChoices: actualMaxChoices
       });
 
       // Save to locally created polls history in localStorage
@@ -252,6 +263,30 @@ export default function PollCreator({ onPollCreated }: PollCreatorProps) {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Max Choices Selector */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-slate-300 flex justify-between items-center">
+              <span>Max Choices Per Voter</span>
+              <span className="text-[10px] text-indigo-300 font-mono font-bold bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded">
+                {maxChoices === 1 ? "Single Choice" : `Up to ${maxChoices} choices`}
+              </span>
+            </label>
+            <select
+              value={maxChoices}
+              onChange={(e) => setMaxChoices(Number(e.target.value))}
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all text-sm text-white font-medium"
+            >
+              {Array.from({ length: Math.max(1, options.length) }, (_, i) => i + 1).map((num) => (
+                <option key={num} value={num} className="bg-slate-950 text-white">
+                  {num === 1 ? "Single Choice (Select 1 option)" : `Multiple Choice (Select up to ${num} options)`}
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-slate-400 leading-normal">
+              Specify the maximum number of choices a voter can select in their response. Choosing 1 creates a traditional single-choice poll.
+            </p>
           </div>
 
           {/* Create Button */}

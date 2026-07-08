@@ -100,7 +100,7 @@ export default function App() {
       }`}>
         <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
         {isFirebaseConfigured ? (
-          <span>🔌 Successfully connected to your dedicated Firebase Realtime Database</span>
+          <span>🔌 Successfully connected to Firebase Realtime Database</span>
         ) : (
           <span>💡 Currently in "Sandbox Mode". Live results are simulated locally.</span>
         )}

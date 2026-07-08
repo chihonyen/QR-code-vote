@@ -129,7 +129,8 @@ export async function createPollInDB(pollData: Omit<Poll, "id" | "createdAt">): 
         options: fullPoll.options,
         createdAt: Timestamp.fromMillis(createdAt),
         expiresAt: Timestamp.fromMillis(fullPoll.expiresAt),
-        creatorUid: fullPoll.creatorUid || ""
+        creatorUid: fullPoll.creatorUid || "",
+        maxChoices: fullPoll.maxChoices || 1
       });
       return pollId;
     } catch (error) {
@@ -162,7 +163,8 @@ export async function getPollFromDB(pollId: string): Promise<Poll | null> {
           options: data.options,
           createdAt: data.createdAt.toMillis(),
           expiresAt: data.expiresAt.toMillis(),
-          creatorUid: data.creatorUid
+          creatorUid: data.creatorUid,
+          maxChoices: data.maxChoices || 1
         };
       }
       return null;
@@ -207,13 +209,15 @@ export async function closePollInDB(pollId: string): Promise<void> {
 /**
  * Submits a vote to a specific poll
  */
-export async function castVoteInDB(pollId: string, voterUid: string, optionIndex: number): Promise<void> {
+export async function castVoteInDB(pollId: string, voterUid: string, optionIndex: number, optionIndices?: number[]): Promise<void> {
   const poll = await getPollFromDB(pollId);
   if (!poll) throw new Error("找不到投票項目。");
 
   if (Date.now() > poll.expiresAt) {
     throw new Error("此投票已截止，無法再進行投票。");
   }
+
+  const indices = optionIndices || [optionIndex];
 
   if (isFirebaseConfigured && db) {
     // Structure: polls/{pollId}/votes/{voterUid}
@@ -228,6 +232,7 @@ export async function castVoteInDB(pollId: string, voterUid: string, optionIndex
     try {
       await setDoc(voteRef, {
         optionIndex,
+        optionIndices: indices,
         votedAt: Timestamp.now()
       });
       return;
@@ -246,6 +251,7 @@ export async function castVoteInDB(pollId: string, voterUid: string, optionIndex
     localVotes.push({
       voterUid,
       optionIndex,
+      optionIndices: indices,
       votedAt: Date.now()
     });
     saveLocalVotes(pollId, localVotes);
@@ -266,6 +272,7 @@ export async function getVotesFromDB(pollId: string): Promise<Vote[]> {
         list.push({
           voterUid: d.id,
           optionIndex: data.optionIndex,
+          optionIndices: data.optionIndices || (data.optionIndex !== undefined ? [data.optionIndex] : []),
           votedAt: data.votedAt?.toMillis() || Date.now()
         });
       });
@@ -293,6 +300,7 @@ export function subscribeToVotes(pollId: string, callback: (votes: Vote[]) => vo
         list.push({
           voterUid: d.id,
           optionIndex: data.optionIndex,
+          optionIndices: data.optionIndices || (data.optionIndex !== undefined ? [data.optionIndex] : []),
           votedAt: data.votedAt?.toMillis() || Date.now()
         });
       });

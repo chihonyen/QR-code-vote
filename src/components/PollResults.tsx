@@ -120,7 +120,10 @@ export default function PollResults({ poll, onBackToVote, onGoHome }: PollResult
   // Calculations
   const totalVotes = votes.length;
   const optionCounts = poll.options.reduce((acc, _, idx) => {
-    acc[idx] = votes.filter((v) => v.optionIndex === idx).length;
+    acc[idx] = votes.filter((v) => {
+      const indices = v.optionIndices || (v.optionIndex !== undefined ? [v.optionIndex] : []);
+      return indices.includes(idx);
+    }).length;
     return acc;
   }, {} as Record<number, number>);
 
